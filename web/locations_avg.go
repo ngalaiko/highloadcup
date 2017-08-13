@@ -19,25 +19,25 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 	}
 
 	fromDate, err := parseFromDate(r)
-	if err != nil {
+	if err != nil && fromDate != 0 {
 		responseErr(w, err)
 		return
 	}
 
 	toDate, err := parseToDate(r)
-	if err != nil {
+	if err != nil && toDate != 0 {
 		responseErr(w, err)
 		return
 	}
 
 	fromAge, err := parseFromAge(r)
-	if err != nil {
+	if err != nil && fromDate != 0 {
 		responseErr(w, err)
 		return
 	}
 
 	toAge, err := parseToAge(r)
-	if err != nil {
+	if err != nil && toAge != 0 {
 		responseErr(w, err)
 		return
 	}

@@ -7,7 +7,6 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/ngalayko/highloadcup/schema"
-	"fmt"
 )
 
 // GetVisitsHandler is handler for /users/:id/visits
@@ -19,9 +18,21 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 	}
 
 	country := parseCountry(r)
-	fromDate, fromDateErr := parseFromDate(r)
-	toDate, toDateErr := parseToDate(r)
-	toDistance, toDistanceErr := parseToDistance(r)
+	fromDate, err := parseFromDate(r)
+	if err != nil && fromDate != 0 {
+		responseErr(w, err)
+		return
+	}
+	toDate, err := parseToDate(r)
+	if err != nil && toDate != 0 {
+		responseErr(w, err)
+		return
+	}
+	toDistance, err := parseToDistance(r)
+	if err != nil && toDistance != 0 {
+		responseErr(w, err)
+		return
+	}
 
 	user, err := wb.db.GetUser(id)
 	if err != nil {
@@ -29,15 +40,11 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	fmt.Println(3)
-
 	visits, err := wb.db.GetVisits(user.VisitIDs)
 	if err != nil {
 		responseErr(w, err)
 		return
 	}
-
-	fmt.Println(4)
 
 	var result []*schema.Visit
 	for _, visit := range visits {
@@ -47,11 +54,11 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 			return
 		}
 
-		if fromDateErr != nil && visit.VisitedAt <= fromDate {
+		if fromDate != 0 && visit.VisitedAt <= fromDate {
 			continue
 		}
 
-		if toDateErr != nil && visit.VisitedAt >= toDate {
+		if toDate != 0 && visit.VisitedAt >= toDate {
 			continue
 		}
 
@@ -59,7 +66,7 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 			continue
 		}
 
-		if toDistanceErr != nil && location.Distance >= toDistance {
+		if toDistance != 0 && location.Distance >= toDistance {
 			continue
 		}
 
