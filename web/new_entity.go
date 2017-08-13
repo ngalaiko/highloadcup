@@ -8,6 +8,7 @@ import (
 
 	"github.com/ngalayko/highloadcup/schema"
 	"github.com/zenazn/goji/web"
+	"log"
 )
 
 // NewEntityHandler is a handler for /:entity/new
@@ -36,7 +37,7 @@ func (wb *Web) NewEntityHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	if err := wb.db.Get(entity, val.IntID(), new(interface{})); err == nil {
+	if _, err := wb.db.Get(entity, val.IntID()); err == nil {
 		responseErr(w, fmt.Errorf("entity already exists"))
 		return
 	}
@@ -46,5 +47,31 @@ func (wb *Web) NewEntityHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	if newVisit, ok := val.(*schema.Visit); ok {
+		go wb.onVisitInserted(newVisit)
+	}
+
 	responseJson(w, struct{}{})
+}
+
+func (wb *Web) onVisitInserted(visit *schema.Visit) {
+	user, err := wb.db.GetUser(visit.UserID)
+	if err != nil {
+		log.Printf("error when updating visit relates (onInserted): %s", err)
+	}
+
+	location, err := wb.db.GetLocation(visit.UserID)
+	if err != nil {
+		log.Printf("error when updating visit relates (onInserted): %s", err)
+	}
+
+	user.VisitIDs = append(user.VisitIDs, visit.ID)
+	if err := wb.db.CreateOrUpdate(user); err != nil {
+		log.Printf("error when updating visit relates (onInserted): %s", err)
+	}
+
+	location.VisitIDs = append(location.VisitIDs, visit.ID)
+	if err := wb.db.CreateOrUpdate(location); err != nil {
+		log.Printf("error when updating visit relates (onInserted): %s", err)
+	}
 }

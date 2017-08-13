@@ -1,16 +1,16 @@
 package database
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
+	"path"
 	"regexp"
 	"sync"
-	"archive/zip"
-	"path"
 
-	"github.com/ngalayko/highloadcup/helper"
 	"github.com/ngalayko/highloadcup/schema"
 )
 
@@ -34,12 +34,18 @@ func (db *DB) ParseData(dataPath string) error {
 		}
 
 		fileName := file.Name
+
+		fileReader, err := file.Open()
+		if err != nil {
+			return err
+		}
+
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
 			log.Printf("loading %s\n", fileName)
-			if err := db.parseFile(file); err != nil {
+			if err := db.parseFile(fileReader, fileName); err != nil {
 				log.Panic("error when parsing %s: %s", fileName, err)
 			}
 
@@ -60,55 +66,40 @@ func (db *DB) ParseData(dataPath string) error {
 }
 
 func (db *DB) updateGenericValues() (err error) {
-	locations, err := db.LoadAllLocations()
-	if err != nil {
-		return err
-	}
-
-	visits, err := db.LoadAllVisits()
-	if err != nil {
-		return err
-	}
-
-	users, err := db.LoadAllUsers()
-	if err != nil {
-		return err
-	}
+	locationMap := db.mapByEntity(schema.EntityLocations)
+	usersMap := db.mapByEntity(schema.EntityUsers)
+	visitsMap := db.mapByEntity(schema.EntityVisits)
 
 	userToVisitsMap := map[uint32][]uint32{}
-	locationToMarksMap := map[uint32][]uint8{}
-	for _, visit := range visits {
-		locationToMarksMap[visit.LocationID] = append(locationToMarksMap[visit.LocationID], visit.Mark)
-		userToVisitsMap[visit.UserID] = append(userToVisitsMap[visit.UserID], visit.ID)
-	}
+	locationToVisitsMap := map[uint32][]uint32{}
 
-	for _, location := range locations {
-		location.AvgMark = helper.Avg(locationToMarksMap[location.ID]...)
-
-		if err := db.CreateOrUpdate(location); err != nil {
-			return err
+	visitsMap.Range(func(k, v interface{}) bool {
+		if visit, ok := v.(*schema.Visit); ok {
+			locationToVisitsMap[visit.LocationID] = append(locationToVisitsMap[visit.LocationID], visit.ID)
+			userToVisitsMap[visit.UserID] = append(userToVisitsMap[visit.UserID], visit.ID)
 		}
-	}
+		return true
+	})
 
-	for _, user := range users {
-		user.VisitIDs = userToVisitsMap[user.ID]
-
-		if err := db.CreateOrUpdate(user); err != nil {
-			return err
+	locationMap.Range(func(k, v interface{}) bool {
+		if location, ok := v.(*schema.Location); ok {
+			location.VisitIDs = locationToVisitsMap[location.ID]
 		}
-	}
+		return true
+	})
+
+	usersMap.Range(func(k, v interface{}) bool {
+		if user, ok := v.(*schema.User); ok {
+			user.VisitIDs = userToVisitsMap[user.ID]
+		}
+		return true
+	})
 
 	return nil
 }
 
-func (db *DB) parseFile(file *zip.File) error {
-	fileReader, err := file.Open()
-	if err != nil {
-		return err
-	}
-	defer fileReader.Close()
-
-	fileEntity, err := parseFileName(file.Name)
+func (db *DB) parseFile(fileReader io.Reader, fileName string) error {
+	fileEntity, err := parseFileName(fileName)
 	if err != nil {
 		return err
 	}
@@ -120,13 +111,15 @@ func (db *DB) parseFile(file *zip.File) error {
 
 	switch fileEntity {
 	case schema.EntityUsers:
+
 		users := &schema.Users{}
 		if err := json.Unmarshal(data, users); err != nil {
 			return err
 		}
 
-		if err := db.CreateUsers(users); err != nil {
-			return err
+		usersMap := db.mapByEntity(schema.EntityUsers)
+		for _, user := range users.Users {
+			usersMap.Store(user.ID, user)
 		}
 
 	case schema.EntityVisits:
@@ -135,8 +128,9 @@ func (db *DB) parseFile(file *zip.File) error {
 			return err
 		}
 
-		if err := db.CreateVisits(visits); err != nil {
-			return err
+		visitsMap := db.mapByEntity(schema.EntityVisits)
+		for _, visit := range visits.Visits {
+			visitsMap.Store(visit.ID, visit)
 		}
 
 	case schema.EntityLocations:
@@ -145,8 +139,9 @@ func (db *DB) parseFile(file *zip.File) error {
 			return err
 		}
 
-		if err := db.CreateLocations(locations); err != nil {
-			return err
+		locationMap := db.mapByEntity(schema.EntityLocations)
+		for _, location := range locations.Locations {
+			locationMap.Store(location.ID, location)
 		}
 	}
 

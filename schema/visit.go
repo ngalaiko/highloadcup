@@ -1,10 +1,7 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
-
-	"github.com/ngalayko/highloadcup/helper"
 )
 
 const (
@@ -26,25 +23,14 @@ type Visit struct {
 	Mark       uint8  `json:"mark"`
 }
 
-// Bucket return bucket name
-func (v *Visit) Bucket() []byte {
-	return BucketsMap[EntityVisits]
-}
-
-// ByteID is a byte view of id
-func (v *Visit) ByteID() []byte {
-	return helper.Itob(v.ID)
+// Entity return entity
+func (v *Visit) Entity() Entity {
+	return EntityVisits
 }
 
 // IntID return entity id
 func (v *Visit) IntID() uint32 {
 	return v.ID
-}
-
-// Bytes returns bytes view of Visit
-func (v *Visit) Bytes() []byte {
-	data, _ := json.Marshal(v)
-	return data
 }
 
 // Validate validates Visit view

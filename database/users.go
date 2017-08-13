@@ -1,40 +1,36 @@
 package database
 
 import (
-	"encoding/json"
+	"fmt"
 
-	"github.com/boltdb/bolt"
 	"github.com/ngalayko/highloadcup/schema"
 )
 
-// CreateUsers creates given user objects in db
-func (db *DB) CreateUsers(users *schema.Users) error {
-	for _, user := range users.Users {
-		if err := db.CreateOrUpdate(user); err != nil {
-			return err
+func (db *DB) GetUser(id uint32) (*schema.User, error) {
+	val, err := db.Get(schema.EntityUsers, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if user, ok := val.(*schema.User); ok {
+		return user, nil
+	}
+
+	return nil, fmt.Errorf("error on casting %v to user", val)
+}
+
+func (db *DB) GetUsers(ids []uint32) (map[uint32]*schema.User, error) {
+	val, err := db.GetIds(schema.EntityUsers, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	usersMap := map[uint32]*schema.User{}
+	for _, v := range val {
+		if user, ok := v.(*schema.User); ok {
+			usersMap[user.ID] = user
 		}
 	}
 
-	return nil
-}
-
-// LoadAllUsers return all users from db
-func (db *DB) LoadAllUsers() (users map[uint32]*schema.User, err error) {
-	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(schema.UsersBucketName)
-
-		users = map[uint32]*schema.User{}
-
-		b.ForEach(func(k, v []byte) error {
-			user := &schema.User{}
-			if err := json.Unmarshal(v, user); err != nil {
-				return err
-			}
-
-			users[user.ID] = user
-			return nil
-		})
-		return nil
-	})
-	return
+	return usersMap, nil
 }

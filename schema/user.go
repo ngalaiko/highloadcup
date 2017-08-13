@@ -1,10 +1,7 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
-
-	"github.com/ngalayko/highloadcup/helper"
 )
 
 const (
@@ -29,28 +26,17 @@ type User struct {
 	Gender    Gender `json:"gender"`
 	BirthDate int64  `json:"birth_date"`
 
-	VisitIDs []uint32 `json:"visit_ids"`
+	VisitIDs []uint32 `json:"-"`
 }
 
-// Bucket return bucket name
-func (u *User) Bucket() []byte {
-	return BucketsMap[EntityUsers]
-}
-
-// ByteID is a byte form of id
-func (u *User) ByteID() []byte {
-	return helper.Itob(u.ID)
+// Entity return entity
+func (u *User) Entity() Entity {
+	return EntityUsers
 }
 
 // IntID return entity id
 func (u *User) IntID() uint32 {
 	return u.ID
-}
-
-// Bytes returns bytes view of User
-func (u *User) Bytes() []byte {
-	data, _ := json.Marshal(u)
-	return data
 }
 
 // Validate validates user view

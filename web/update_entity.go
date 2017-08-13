@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/ngalayko/highloadcup/schema"
@@ -41,9 +42,15 @@ func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := wb.db.Get(entity, id, new(interface{})); err != nil {
+	oldValue, err := wb.db.Get(entity, id)
+	if err != nil {
 		http.NotFound(w, r)
 		return
+	}
+
+	oldVisit := &schema.Visit{}
+	if oldVisitPtr, ok := oldValue.(*schema.Visit); ok {
+		*oldVisit = *oldVisitPtr
 	}
 
 	if err := wb.db.CreateOrUpdate(val); err != nil {
@@ -51,5 +58,54 @@ func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	if newVisit, ok := val.(*schema.Visit); ok {
+		go wb.onVisitUpdated(oldVisit, newVisit)
+	}
+
 	responseJson(w, struct{}{})
+}
+
+func (wb *Web) onVisitUpdated(oldVisit *schema.Visit, newVisit *schema.Visit) {
+
+	user, err := wb.db.GetUser(oldVisit.UserID)
+	if err != nil {
+		log.Printf("error when updating visit relates (onUpdated): %s", err)
+	}
+
+	var newUserVisitIds []uint32
+	for _, visitID := range user.VisitIDs {
+		if visitID == oldVisit.ID {
+			continue
+		}
+
+		newUserVisitIds = append(newUserVisitIds, visitID)
+	}
+	user.VisitIDs = newUserVisitIds
+
+	if err := wb.db.CreateOrUpdate(user); err != nil {
+		log.Printf("error when updating visit relates (onUpdated): %s", err)
+	}
+
+	//
+
+	location, err := wb.db.GetLocation(oldVisit.UserID)
+	if err != nil {
+		log.Printf("error when updating visit relates (onUpdated): %s", err)
+	}
+
+	var newLocationVisitIds []uint32
+	for _, visitID := range location.VisitIDs {
+		if visitID == oldVisit.ID {
+			continue
+		}
+
+		newLocationVisitIds = append(newLocationVisitIds, visitID)
+	}
+	location.VisitIDs = newLocationVisitIds
+
+	if err := wb.db.CreateOrUpdate(location); err != nil {
+		log.Printf("error when updating visit relates (onUpdated): %s", err)
+	}
+
+	wb.onVisitInserted(newVisit)
 }

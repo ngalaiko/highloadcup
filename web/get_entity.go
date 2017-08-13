@@ -20,12 +20,11 @@ func (wb *Web) GetEntityHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	result, err := wb.db.GetBytes(entity, id)
+	result, err := wb.db.Get(entity, id)
 	if err != nil {
 		responseErr(w, err)
 		return
 	}
 
-	w.Header().Set("Content-type", "application/json")
-	w.Write(result)
+	responseJson(w, result)
 }

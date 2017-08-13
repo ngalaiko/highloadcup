@@ -1,10 +1,7 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
-
-	"github.com/ngalayko/highloadcup/helper"
 )
 
 const (
@@ -25,28 +22,17 @@ type Location struct {
 	City     string `json:"city"`
 	Distance uint32 `json:"distance"`
 
-	AvgMark float32 `json:"avg"`
+	VisitIDs []uint32 `json:"-"`
 }
 
-// Bucket return bucket name
-func (l *Location) Bucket() []byte {
-	return BucketsMap[EntityLocations]
-}
-
-// ByteID is a byte view of id
-func (l *Location) ByteID() []byte {
-	return helper.Itob(l.ID)
+// Entity return entity
+func (l *Location) Entity() Entity {
+	return EntityLocations
 }
 
 // IntID return entity id
 func (l *Location) IntID() uint32 {
 	return l.ID
-}
-
-// Bytes returns bytes view of Location
-func (l *Location) Bytes() []byte {
-	data, _ := json.Marshal(l)
-	return data
 }
 
 // Validate validates location fields

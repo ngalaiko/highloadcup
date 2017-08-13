@@ -8,8 +8,10 @@ import (
 type Gender uint16
 
 const (
+	// GenderUndefined is a `` gender
+	GenderUndefined = iota
 	// GenderMale is a `m` gender
-	GenderMale = iota
+	GenderMale
 	// GenderFemale is a `f` gender
 	GenderFemale
 )
@@ -19,6 +21,9 @@ func (t Gender) String() string {
 	var enumVal string
 
 	switch t {
+	case GenderUndefined:
+		enumVal = ""
+
 	case GenderMale:
 		enumVal = "m"
 
@@ -38,6 +43,9 @@ func (t Gender) MarshalText() ([]byte, error) {
 // UnmarshalText unmarshall Gender from text.
 func (t *Gender) UnmarshalText(text []byte) error {
 	switch string(text) {
+	case "":
+		*t = GenderUndefined
+
 	case "m":
 		*t = GenderMale
 

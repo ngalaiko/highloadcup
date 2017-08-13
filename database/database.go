@@ -2,14 +2,10 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"log"
 
-	"github.com/boltdb/bolt"
-	"github.com/ngalayko/highloadcup/config"
-	"github.com/ngalayko/highloadcup/helper"
 	"github.com/ngalayko/highloadcup/schema"
+	"golang.org/x/sync/syncmap"
 )
 
 const (
@@ -19,7 +15,9 @@ const (
 type ctxDbKey string
 
 type DB struct {
-	*bolt.DB
+	usersMap     *syncmap.Map
+	locationsMap *syncmap.Map
+	visitsMap    *syncmap.Map
 }
 
 func NewContext(ctx context.Context, db interface{}) context.Context {
@@ -43,90 +41,56 @@ func FromContext(ctx context.Context) *DB {
 }
 
 func NewDB(ctx context.Context) *DB {
-	cfg := config.FromContext(ctx)
-
-	db, err := bolt.Open(cfg.DbPath, 0600, nil)
-	if err != nil {
-		log.Panicf("erorr when open bolt.db: %s", err)
+	return &DB{
+		usersMap:     &syncmap.Map{},
+		locationsMap: &syncmap.Map{},
+		visitsMap:    &syncmap.Map{},
 	}
-
-	if err := initDb(db); err != nil {
-		log.Panicf("erorr when init bolt.db: %s", err)
-	}
-
-	return &DB{db}
 }
 
-func initDb(db *bolt.DB) error {
-	return db.Update(func(tx *bolt.Tx) error {
-		for _, bucketName := range schema.Buckets {
-			_, err := tx.CreateBucketIfNotExists(bucketName)
-			if err != nil {
-				return fmt.Errorf("CreateOrUpdate bucketName error: %s", err)
-			}
-		}
-
+func (db *DB) mapByEntity(entity schema.Entity) *syncmap.Map {
+	switch entity {
+	case schema.EntityUsers:
+		return db.usersMap
+	case schema.EntityVisits:
+		return db.visitsMap
+	case schema.EntityLocations:
+		return db.locationsMap
+	default:
 		return nil
-	})
+	}
 }
 
 // CreateOrUpdate creates entity in db
 func (db *DB) CreateOrUpdate(entity schema.IEntity) error {
-	return db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket(entity.Bucket())
 
-		if err := b.Put(entity.ByteID(), entity.Bytes()); err != nil {
-			return err
-		}
+	m := db.mapByEntity(entity.Entity())
 
-		return nil
-	})
-}
-
-func (db *DB) GetBytes(entity schema.Entity, id uint32) (result []byte, err error) {
-	err = db.View(func(tx *bolt.Tx) error {
-
-		b := tx.Bucket(schema.BucketsMap[entity])
-
-		result = b.Get(helper.Itob(id))
-
-		return nil
-	})
-
-	return
-}
-
-func (db *DB) Get(entity schema.Entity, id uint32, toPtr interface{}) error {
-	data, err := db.GetBytes(entity, id)
-	if err != nil {
-		return err
-	}
-
-	if err := json.Unmarshal(data, toPtr); err != nil {
-		return err
-	}
+	m.Store(entity.IntID(), entity)
 
 	return nil
 }
 
-func (db *DB) GetIds(entity schema.Entity, ids []uint32, toPtr interface{}) error {
-	return db.View(func(tx *bolt.Tx) error {
+func (db *DB) Get(entity schema.Entity, id uint32) (interface{}, error) {
+	m := db.mapByEntity(entity)
 
-		b := tx.Bucket(schema.BucketsMap[entity])
+	if result, ok := m.Load(id); ok {
+		return result, nil
+	}
 
-		var result []byte
-		for _, id := range ids {
-			if len(result) > 0 {
-				result = append(result, ',')
-			}
+	return nil, fmt.Errorf("%s with id %d not exists", entity.String(), id)
+}
 
-			result = append(result, b.Get(helper.Itob(id))...)
+func (db *DB) GetIds(entity schema.Entity, ids []uint32) ([]interface{}, error) {
+	var result []interface{}
+	for _, id := range ids {
+		v, err := db.Get(entity, id)
+		if err != nil {
+			return nil, err
 		}
 
-		toParse := []byte{'['}
-		toParse = append(toParse, result...)
-		toParse = append(toParse, ']')
+		result = append(result, v)
+	}
 
-		return json.Unmarshal(toParse, toPtr)
-	})
+	return result, nil
 }

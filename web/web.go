@@ -126,3 +126,37 @@ func parseEntity(c web.C) (schema.Entity, error) {
 
 	return entity, nil
 }
+
+func parseToDistance(r *http.Request) uint32 {
+	distance, _ := strconv.ParseInt(r.URL.Query().Get("toDistance"), 10, 32)
+	return uint32(distance)
+}
+
+func parseCountry(r *http.Request) string {
+	return r.URL.Query().Get("country")
+}
+
+func parseToDate(r *http.Request) int64 {
+	date, _ := strconv.ParseInt(r.URL.Query().Get("toDate"), 10, 32)
+	return date
+}
+
+func parseFromDate(r *http.Request) int64 {
+	date, _ := strconv.ParseInt(r.URL.Query().Get("fromDate"), 10, 32)
+	return date
+}
+
+func parseFromAge(r *http.Request) int {
+	age, _ := strconv.ParseInt(r.URL.Query().Get("fromAge"), 10, 32)
+	return int(age)
+}
+
+func parseToAge(r *http.Request) int {
+	age, _ := strconv.ParseInt(r.URL.Query().Get("toAge"), 10, 64)
+	return int(age)
+}
+
+func parseGender(r *http.Request) (gender schema.Gender) {
+	gender.UnmarshalText([]byte(r.URL.Query().Get("gender")))
+	return
+}

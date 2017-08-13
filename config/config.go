@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	"gopkg.in/yaml.v2"
 	"flag"
+	"gopkg.in/yaml.v2"
 )
 
 const (

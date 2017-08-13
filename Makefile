@@ -20,7 +20,10 @@ docker-build:
 	docker build . -t stor.highloadcup.ru/travels/tapir_winner
 
 docker-run: docker-build
-	docker run -p 80:8080 -v $(shell pwd)/data:/tmp/data stor.highloadcup.ru/travels/tapir_winner
+	docker run -p 80:8000 -v $(shell pwd)/data:/tmp/data stor.highloadcup.ru/travels/tapir_winner
 
 docker-upload: docker-build
 	docker push stor.highloadcup.ru/travels/tapir_winner
+
+local-run: fast-build
+	./bin/highloadcup --config=config.yaml

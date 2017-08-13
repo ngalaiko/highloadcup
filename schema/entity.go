@@ -8,9 +8,7 @@ import (
 type IEntity interface {
 	Validate() error
 	IntID() uint32
-	ByteID() []byte
-	Bytes() []byte
-	Bucket() []byte
+	Entity() Entity
 }
 
 // Entity is a enum for all schema components

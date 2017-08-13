@@ -1,40 +1,35 @@
 package database
 
 import (
-	"encoding/json"
+	"fmt"
 
-	"github.com/boltdb/bolt"
 	"github.com/ngalayko/highloadcup/schema"
 )
 
-// CreateLocation creates given location objects
-func (db *DB) CreateLocations(locations *schema.Locations) error {
-	for _, location := range locations.Locations {
-		if err := db.CreateOrUpdate(location); err != nil {
-			return err
-		}
+func (db *DB) GetLocation(id uint32) (*schema.Location, error) {
+	val, err := db.Get(schema.EntityLocations, id)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	if location, ok := val.(*schema.Location); ok {
+		return location, nil
+	}
+
+	return nil, fmt.Errorf("error on casting %v to location", val)
 }
 
-// LoadAllLocations return all locations from db
-func (db *DB) LoadAllLocations() (locations map[uint32]*schema.Location, err error) {
-	err = db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(schema.LocationsBucketName)
+func (db *DB) GetAllLocations() (map[uint32]*schema.Location, error) {
+	m := db.mapByEntity(schema.EntityLocations)
 
-		locations = map[uint32]*schema.Location{}
-
-		b.ForEach(func(k, v []byte) error {
-			location := &schema.Location{}
-			if err := json.Unmarshal(v, location); err != nil {
-				return err
-			}
-
+	locations := map[uint32]*schema.Location{}
+	m.Range(func(k, v interface{}) bool {
+		if location, ok := v.(*schema.Location); ok {
 			locations[location.ID] = location
-			return nil
-		})
-		return nil
+		}
+
+		return true
 	})
-	return
+
+	return locations, nil
 }

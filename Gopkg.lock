@@ -2,12 +2,6 @@
 
 
 [[projects]]
-  name = "github.com/boltdb/bolt"
-  packages = ["."]
-  revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
-  version = "v1.3.1"
-
-[[projects]]
   name = "github.com/zenazn/goji"
   packages = ["web"]
   revision = "64eb34159fe53473206c2b3e70fe396a639452f2"
@@ -15,9 +9,9 @@
 
 [[projects]]
   branch = "master"
-  name = "golang.org/x/sys"
-  packages = ["unix"]
-  revision = "e42485b6e20ae7d2304ec72e535b103ed350cc02"
+  name = "golang.org/x/sync"
+  packages = ["syncmap"]
+  revision = "f52d1811a62927559de87708c8913c1650ce4f26"
 
 [[projects]]
   branch = "v1"
@@ -34,6 +28,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "3af9b8bfad3b5d98223592b24c49af2460d5f0672baf401e31d02b05e8b1bdb7"
+  inputs-digest = "cf1abf83d4751b8bc285996cc1e5f0bb1a790a00f66cf869094771e6ea636462"
   solver-name = "gps-cdcl"
   solver-version = 1
