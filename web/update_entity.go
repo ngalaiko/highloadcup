@@ -67,31 +67,17 @@ func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Reque
 }
 
 func (wb *Web) onVisitUpdated(oldVisit *schema.Visit, newVisit *schema.Visit) {
+	wb.onVisitUpdatedUpdateLocation(oldVisit, newVisit)
+	wb.onVisitUpdatedUpdateUser(oldVisit, newVisit)
 
-	user, err := wb.db.GetUser(oldVisit.UserID)
-	if err != nil {
-		log.Printf("error when updating visit relates (onUpdated): %s", err)
-	}
+	wb.onVisitInserted(newVisit)
+}
 
-	var newUserVisitIds []uint32
-	for _, visitID := range user.VisitIDs {
-		if visitID == oldVisit.ID {
-			continue
-		}
-
-		newUserVisitIds = append(newUserVisitIds, visitID)
-	}
-	user.VisitIDs = newUserVisitIds
-
-	if err := wb.db.CreateOrUpdate(user); err != nil {
-		log.Printf("error when updating visit relates (onUpdated): %s", err)
-	}
-
-	//
-
+func (wb *Web) onVisitUpdatedUpdateLocation(oldVisit *schema.Visit, newVisit *schema.Visit) {
 	location, err := wb.db.GetLocation(oldVisit.UserID)
 	if err != nil {
 		log.Printf("error when updating visit relates (onUpdated): %s", err)
+		return
 	}
 
 	var newLocationVisitIds []uint32
@@ -107,6 +93,27 @@ func (wb *Web) onVisitUpdated(oldVisit *schema.Visit, newVisit *schema.Visit) {
 	if err := wb.db.CreateOrUpdate(location); err != nil {
 		log.Printf("error when updating visit relates (onUpdated): %s", err)
 	}
+}
 
-	wb.onVisitInserted(newVisit)
+func (wb *Web) onVisitUpdatedUpdateUser(oldVisit *schema.Visit, newVisit *schema.Visit) {
+	user, err := wb.db.GetUser(oldVisit.UserID)
+	if err != nil {
+
+		log.Printf("error when updating visit relates (onUpdated): %s", err)
+		return
+	}
+
+	var newUserVisitIds []uint32
+	for _, visitID := range user.VisitIDs {
+		if visitID == oldVisit.ID {
+			continue
+		}
+
+		newUserVisitIds = append(newUserVisitIds, visitID)
+	}
+	user.VisitIDs = newUserVisitIds
+
+	if err := wb.db.CreateOrUpdate(user); err != nil {
+		log.Printf("error when updating visit relates (onUpdated): %s", err)
+	}
 }

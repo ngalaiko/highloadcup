@@ -56,23 +56,32 @@ func (wb *Web) NewEntityHandler(c web.C, w http.ResponseWriter, r *http.Request)
 }
 
 func (wb *Web) onVisitInserted(visit *schema.Visit) {
-	user, err := wb.db.GetUser(visit.UserID)
-	if err != nil {
-		log.Printf("error when updating visit relates (onInserted): %s", err)
-	}
+	wb.onVisitInsertedUpdateLocation(visit)
+	wb.onVisitInsertedUpdateUser(visit)
+}
 
+func (wb *Web) onVisitInsertedUpdateLocation(visit *schema.Visit) {
 	location, err := wb.db.GetLocation(visit.UserID)
 	if err != nil {
 		log.Printf("error when updating visit relates (onInserted): %s", err)
-	}
-
-	user.VisitIDs = append(user.VisitIDs, visit.ID)
-	if err := wb.db.CreateOrUpdate(user); err != nil {
-		log.Printf("error when updating visit relates (onInserted): %s", err)
+		return
 	}
 
 	location.VisitIDs = append(location.VisitIDs, visit.ID)
 	if err := wb.db.CreateOrUpdate(location); err != nil {
+		log.Printf("error when updating visit relates (onInserted): %s", err)
+	}
+}
+
+func (wb *Web) onVisitInsertedUpdateUser(visit *schema.Visit) {
+	user, err := wb.db.GetUser(visit.UserID)
+	if err != nil {
+		log.Printf("error when updating visit relates (onInserted): %s", err)
+		return
+	}
+
+	user.VisitIDs = append(user.VisitIDs, visit.ID)
+	if err := wb.db.CreateOrUpdate(user); err != nil {
 		log.Printf("error when updating visit relates (onInserted): %s", err)
 	}
 }
