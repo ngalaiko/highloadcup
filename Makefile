@@ -15,3 +15,12 @@ fast-build:
 
 build-alpine: deps
 	CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ./bin/highloadcup ./cmd/main.go
+
+docker-build:
+	docker build . -t stor.highloadcup.ru/travels/tapir_winner
+
+docker-run: docker-build
+	docker run -p 80:8080 -v $(shell pwd)/data:/tmp/data stor.highloadcup.ru/travels/tapir_winner
+
+docker-upload: docker-build
+	docker push stor.highloadcup.ru/travels/tapir_winner
