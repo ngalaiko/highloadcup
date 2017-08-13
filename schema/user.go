@@ -42,6 +42,8 @@ func (u *User) IntID() uint32 {
 // Validate validates user view
 func (u *User) Validate() error {
 	switch {
+	case u.ID == 0:
+		return fmt.Errorf("User.ID is null")
 	case len(u.Email) > maxEmailLen:
 		return fmt.Errorf("User.Email longer than %d", maxEmailLen)
 	case len(u.FirstName) > maxFirstNameLen:

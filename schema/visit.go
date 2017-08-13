@@ -36,6 +36,8 @@ func (v *Visit) IntID() uint32 {
 // Validate validates Visit view
 func (v *Visit) Validate() error {
 	switch {
+	case v.ID == 0:
+		return fmt.Errorf("Visit.ID is null")
 	case v.VisitedAt > maxVisitedAt:
 		return fmt.Errorf("Visit.VisitedAt more than %d", maxVisitedAt)
 	case v.VisitedAt < minVisitedAt:

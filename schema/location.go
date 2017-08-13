@@ -38,6 +38,8 @@ func (l *Location) IntID() uint32 {
 // Validate validates location fields
 func (l *Location) Validate() error {
 	switch {
+	case l.ID == 0:
+		return fmt.Errorf("User.ID is null")
 	case len(l.Country) > maxCountryLen:
 		return fmt.Errorf("Location.Country longer than %d", maxCountryLen)
 	case len(l.City) > maxCityLen:
