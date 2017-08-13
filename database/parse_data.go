@@ -3,16 +3,12 @@ package database
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
-	"os"
 	"regexp"
 	"sync"
 	"archive/zip"
-	"path/filepath"
 	"path"
-	"io"
 
 	"github.com/ngalayko/highloadcup/helper"
 	"github.com/ngalayko/highloadcup/schema"
@@ -26,30 +22,28 @@ var (
 func (db *DB) ParseData(dataPath string) error {
 	log.Printf("start loading data from %s", dataPath)
 
-	if err := unzip(dataPath, path.Dir(dataPath)); err != nil {
+	reader, err := zip.OpenReader(dataPath)
+	if err != nil {
 		return err
 	}
 
 	wg := sync.WaitGroup{}
-	files, _ := ioutil.ReadDir(path.Dir(dataPath))
-	for _, f := range files {
-
-		if f.Name() == path.Base(dataPath) {
+	for _, file := range reader.File {
+		if file.Name == path.Base(dataPath) {
 			continue
 		}
 
-		filename := f.Name()
-
+		fileName := file.Name
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
 
-			log.Printf("loading %s\n", filename)
-			if err := db.parseFile(fmt.Sprintf("%s/%s", path.Dir(dataPath), filename)); err != nil {
-				log.Panic("error when parsing %s: %s", filename, err)
+			log.Printf("loading %s\n", fileName)
+			if err := db.parseFile(file); err != nil {
+				log.Panic("error when parsing %s: %s", fileName, err)
 			}
 
-			log.Printf("%s loaded\n", filename)
+			log.Printf("%s loaded\n", fileName)
 		}()
 	}
 
@@ -107,18 +101,19 @@ func (db *DB) updateGenericValues() (err error) {
 	return nil
 }
 
-func (db *DB) parseFile(filePath string) error {
-	file, err := os.Open(filePath)
+func (db *DB) parseFile(file *zip.File) error {
+	fileReader, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer fileReader.Close()
+
+	fileEntity, err := parseFileName(file.Name)
 	if err != nil {
 		return err
 	}
 
-	fileEntity, err := parseFileName(file.Name())
-	if err != nil {
-		return err
-	}
-
-	data, err := ioutil.ReadAll(file)
+	data, err := ioutil.ReadAll(fileReader)
 	if err != nil {
 		return err
 	}
@@ -185,41 +180,4 @@ func parseFileName(fileName string) (schema.Entity, error) {
 	}
 
 	return entity, nil
-}
-
-func unzip(archive, target string) error {
-	reader, err := zip.OpenReader(archive)
-	if err != nil {
-		return err
-	}
-
-	if err := os.MkdirAll(target, 0755); err != nil {
-		return err
-	}
-
-	for _, file := range reader.File {
-		path := filepath.Join(target, file.Name)
-		if file.FileInfo().IsDir() {
-			os.MkdirAll(path, file.Mode())
-			continue
-		}
-
-		fileReader, err := file.Open()
-		if err != nil {
-			return err
-		}
-		defer fileReader.Close()
-
-		targetFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
-		if err != nil {
-			return err
-		}
-		defer targetFile.Close()
-
-		if _, err := io.Copy(targetFile, fileReader); err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
