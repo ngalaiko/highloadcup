@@ -2,11 +2,12 @@ package web
 
 import (
 	"net/http"
+	"time"
+
+	"github.com/zenazn/goji/web"
 
 	"github.com/ngalayko/highloadcup/helper"
 	"github.com/ngalayko/highloadcup/schema"
-	"github.com/zenazn/goji/web"
-	"time"
 )
 
 // GetLocationsAvgHandler is a handler for /locations/:id/avg
@@ -17,11 +18,35 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	fromDate := parseFromDate(r)
-	toDate := parseToDate(r)
-	fromAge := parseFromAge(r)
-	toAge := parseToAge(r)
-	gender := parseGender(r)
+	fromDate, err := parseFromDate(r)
+	if err != nil && fromDate != 0 {
+		responseErr(w, err)
+		return
+	}
+
+	toDate, err := parseToDate(r)
+	if err != nil && toDate != 0 {
+		responseErr(w, err)
+		return
+	}
+
+	fromAge, err := parseFromAge(r)
+	if err != nil && fromAge != 0 {
+		responseErr(w, err)
+		return
+	}
+
+	toAge, err := parseToAge(r)
+	if err != nil && toAge != 0 {
+		responseErr(w, err)
+		return
+	}
+
+	gender, err := parseGender(r)
+	if err != nil && gender == schema.GenderUndefined {
+		responseErr(w, err)
+		return
+	}
 
 	location, err := wb.db.GetLocation(id)
 	if err != nil {

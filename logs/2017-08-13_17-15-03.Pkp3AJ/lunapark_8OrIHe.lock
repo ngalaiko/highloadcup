@@ -1,0 +1,60 @@
+[tank]
+uuid = d289c084-bc12-43a5-b786-06510dc20b34
+pid = 1
+lock_dir = /var/lock
+plugin_rcheck = yandextank.plugins.ResourceCheck
+plugin_shellexec = yandextank.plugins.ShellExec
+plugin_phantom = yandextank.plugins.Phantom
+plugin_aggregate = yandextank.plugins.Aggregator
+plugin_autostop = yandextank.plugins.Autostop
+plugin_telegraf = yandextank.plugins.Telegraf
+plugin_console = yandextank.plugins.Console
+plugin_tips = yandextank.plugins.TipsAndTricks
+plugin_rcassert = yandextank.plugins.RCAssert
+plugin_jsonreport = yandextank.plugins.JsonReport
+artifacts_base_dir = logs
+flush_config_to = 
+artifacts_dir = 
+taskset_path = taskset
+affinity = 
+
+[bfg]
+ammo_type = caseline
+
+[overload]
+api_address = https://overload.yandex.net/
+
+[telegraf]
+disguise_hostnames = 1
+
+[monitoring]
+disguise_hostnames = 1
+
+[phantom]
+config = 
+phantom_path = phantom
+enum_ammo = False
+buffered_seconds = 2
+exclude_markers = []
+affinity = 
+phout_file = /var/loadtest/logs/phout_ioKbwi.log
+threads = 2
+phantom_modules_path = /usr/lib/phantom
+additional_libs = 
+writelog = none
+timeout = 11s
+ssl = 0
+tank_type = http
+instances = 1000
+gatling_ip = 
+method_prefix = method_stream
+method_options = 
+source_log_prefix = 
+phantom_http_line = 
+phantom_http_field_num = 
+phantom_http_field = 
+phantom_http_entity = 
+address = 127.0.0.1
+connection_test = 1
+port = 
+

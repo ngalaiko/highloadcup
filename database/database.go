@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ngalayko/highloadcup/schema"
 	"golang.org/x/sync/syncmap"
+
+	"github.com/ngalayko/highloadcup/schema"
 )
 
 const (

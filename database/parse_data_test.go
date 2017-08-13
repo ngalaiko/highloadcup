@@ -3,8 +3,9 @@ package database
 import (
 	"testing"
 
-	"github.com/ngalayko/highloadcup/schema"
 	. "gopkg.in/check.v1"
+
+	"github.com/ngalayko/highloadcup/schema"
 )
 
 type DbTestSuite struct{}

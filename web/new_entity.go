@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"log"
+
+	"github.com/zenazn/goji/web"
 
 	"github.com/ngalayko/highloadcup/schema"
-	"github.com/zenazn/goji/web"
-	"log"
 )
 
 // NewEntityHandler is a handler for /:entity/new

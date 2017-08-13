@@ -6,8 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ngalayko/highloadcup/schema"
 	"github.com/zenazn/goji/web"
+
+	"github.com/ngalayko/highloadcup/schema"
 )
 
 // GetEntityHandler is a handler for /:entity/:id

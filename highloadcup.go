@@ -7,6 +7,7 @@ import (
 	"github.com/ngalayko/highloadcup/config"
 	"github.com/ngalayko/highloadcup/database"
 	"github.com/ngalayko/highloadcup/web"
+	"github.com/ngalayko/highloadcup/views"
 )
 
 type Application struct {
@@ -20,6 +21,7 @@ var (
 		config.NewContext,
 		database.NewContext,
 		web.NewContext,
+		views.NewContext,
 	}
 )
 

@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/zenazn/goji/web"
+
 	"github.com/ngalayko/highloadcup/config"
 	"github.com/ngalayko/highloadcup/database"
 	"github.com/ngalayko/highloadcup/schema"
-	"github.com/zenazn/goji/web"
+	"github.com/ngalayko/highloadcup/views"
+	"fmt"
 )
 
 const (
@@ -22,6 +25,7 @@ type ctxKey string
 // Web is a wb service
 type Web struct {
 	db *database.DB
+	views *views.Views
 
 	server *http.Server
 }
@@ -53,6 +57,8 @@ func NewWeb(ctx context.Context) *Web {
 
 	w := &Web{
 		db: database.FromContext(ctx),
+		views: views.FromContext(ctx),
+
 		server: &http.Server{
 			Addr: config.FromContext(ctx).ListenUrl,
 		},
@@ -111,52 +117,68 @@ func responseJson(w http.ResponseWriter, val interface{}) {
 func parseId(c web.C) (uint32, error) {
 	id, err := strconv.ParseInt(c.URLParams["id"], 10, 32)
 	if err != nil {
-		return 0, err
+		fmt.Println(c.URLParams["id"],err)
+		return 0, fmt.Errorf("erorr parsing id: %s", err)
 	}
 
 	return uint32(id), nil
 }
 
-func parseEntity(c web.C) (schema.Entity, error) {
-	var entity schema.Entity
-
+func parseEntity(c web.C) (entity schema.Entity, err error) {
 	if err := entity.UnmarshalText([]byte(c.URLParams["entity"])); err != nil {
-		return entity, err
+		return schema.EntityUndefined, fmt.Errorf("erorr parsing entity: %s", err)
 	}
 
 	return entity, nil
 }
 
-func parseToDistance(r *http.Request) uint32 {
-	distance, _ := strconv.ParseInt(r.URL.Query().Get("toDistance"), 10, 32)
-	return uint32(distance)
+func parseToDistance(r *http.Request) (uint32, error) {
+	distance, err := strconv.ParseInt(r.URL.Query().Get("toDistance"), 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("erorr parsing toDistance: %s", err)
+	}
+	return uint32(distance), nil
 }
 
 func parseCountry(r *http.Request) string {
 	return r.URL.Query().Get("country")
 }
 
-func parseToDate(r *http.Request) int64 {
-	date, _ := strconv.ParseInt(r.URL.Query().Get("toDate"), 10, 32)
-	return date
+func parseToDate(r *http.Request) (int64, error) {
+	date, err := strconv.ParseInt(r.URL.Query().Get("toDate"), 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("erorr parsing toDate: %s", err)
+	}
+	return date, nil
 }
 
-func parseFromDate(r *http.Request) int64 {
-	date, _ := strconv.ParseInt(r.URL.Query().Get("fromDate"), 10, 32)
-	return date
+func parseFromDate(r *http.Request) (int64, error) {
+	date, err := strconv.ParseInt(r.URL.Query().Get("fromDate"), 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("erorr parsing fromDateDate: %s", err)
+	}
+	return date, nil
 }
 
-func parseFromAge(r *http.Request) int {
-	age, _ := strconv.ParseInt(r.URL.Query().Get("fromAge"), 10, 32)
-	return int(age)
+func parseFromAge(r *http.Request) (int, error) {
+	age, err := strconv.ParseInt(r.URL.Query().Get("fromAge"), 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("erorr parsing fromAge: %s", err)
+	}
+	return int(age), nil
 }
 
-func parseToAge(r *http.Request) int {
-	age, _ := strconv.ParseInt(r.URL.Query().Get("toAge"), 10, 64)
-	return int(age)
+func parseToAge(r *http.Request) (int, error) {
+	age, err := strconv.ParseInt(r.URL.Query().Get("toAge"), 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("erorr parsing toAge: %s", err)
+	}
+	return int(age), err
 }
 
-func parseGender(r *http.Request) (gender schema.Gender) {
-	gender.UnmarshalText([]byte(r.URL.Query().Get("gender")))
-	return
+func parseGender(r *http.Request) (gender schema.Gender, err error) {
+	if err := gender.UnmarshalText([]byte(r.URL.Query().Get("gender"))); err != nil {
+		return schema.GenderUndefined, fmt.Errorf("erorr parsing gender: %s", err)
+	}
+	return gender, err
 }

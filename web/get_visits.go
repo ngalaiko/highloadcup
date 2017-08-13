@@ -4,8 +4,9 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/ngalayko/highloadcup/schema"
 	"github.com/zenazn/goji/web"
+
+	"github.com/ngalayko/highloadcup/schema"
 )
 
 // GetVisitsHandler is handler for /users/:id/visits
@@ -16,14 +17,29 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	fromDate := parseFromDate(r)
-	toDate := parseToDate(r)
+	fromDate, err := parseFromDate(r)
+	if err != nil && fromDate != 0{
+		responseErr(w, err)
+		return
+	}
+
+	toDate, err := parseToDate(r)
+	if err != nil && toDate != 0 {
+		responseErr(w, err)
+		return
+	}
+
 	country := parseCountry(r)
-	toDistance := parseToDistance(r)
+
+	toDistance, err := parseToDistance(r)
+	if err != nil && toDistance != 0 {
+		responseErr(w, err)
+		return
+	}
 
 	user, err := wb.db.GetUser(id)
 	if err != nil {
-		responseErr(w, err)
+		http.NotFound(w, r)
 		return
 	}
 
@@ -69,5 +85,11 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		return result[i].VisitedAt < result[j].VisitedAt
 	})
 
-	responseJson(w, schema.Visits{result})
+	views, err := wb.views.FillVisitsViews(result)
+	if err != nil {
+		responseErr(w, err)
+		return
+	}
+
+	responseJson(w, views)
 }

@@ -15,8 +15,13 @@ type IEntity interface {
 type Entity uint16
 
 const (
-	EntityUsers = iota
+	// EntityUndefined is empty entity
+	EntityUndefined = iota
+	// EntityUsers is 'users' entity
+	EntityUsers
+	// EntityLocations is 'locations' entity
 	EntityLocations
+	// EntityVisits is 'visits' entity
 	EntityVisits
 )
 
@@ -25,6 +30,9 @@ func (t Entity) String() string {
 	var enumVal string
 
 	switch t {
+	case EntityUndefined:
+		enumVal = ""
+
 	case EntityUsers:
 		enumVal = "users"
 

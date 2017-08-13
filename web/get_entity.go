@@ -16,13 +16,13 @@ func (wb *Web) GetEntityHandler(c web.C, w http.ResponseWriter, r *http.Request)
 
 	id, err := parseId(c)
 	if err != nil {
-		responseErr(w, err)
+		http.NotFound(w, r)
 		return
 	}
 
 	result, err := wb.db.Get(entity, id)
 	if err != nil {
-		responseErr(w, err)
+		http.NotFound(w, r)
 		return
 	}
 
