@@ -7,6 +7,7 @@ import (
 	"github.com/zenazn/goji/web"
 
 	"github.com/ngalayko/highloadcup/schema"
+	"fmt"
 )
 
 // GetVisitsHandler is handler for /users/:id/visits
@@ -18,13 +19,13 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 	}
 
 	fromDate, err := parseFromDate(r)
-	if err != nil && fromDate != 0{
+	if err != nil {
 		responseErr(w, err)
 		return
 	}
 
 	toDate, err := parseToDate(r)
-	if err != nil && toDate != 0 {
+	if err != nil {
 		responseErr(w, err)
 		return
 	}
@@ -32,7 +33,8 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 	country := parseCountry(r)
 
 	toDistance, err := parseToDistance(r)
-	if err != nil && toDistance != 0 {
+	fmt.Println(toDistance, err)
+	if err != nil {
 		responseErr(w, err)
 		return
 	}
