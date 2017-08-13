@@ -50,7 +50,7 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 
 	location, err := wb.db.GetLocation(id)
 	if err != nil {
-		responseErr(w, err)
+		http.NotFound(w, r)
 		return
 	}
 
@@ -105,5 +105,5 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"avg": 0.0}"`))
+	w.Write([]byte(`{"avg": 0.0}`))
 }

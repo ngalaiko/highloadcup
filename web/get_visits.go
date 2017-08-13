@@ -77,8 +77,7 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 	}
 
 	if len(result) == 0 {
-		http.NotFound(w, r)
-		return
+		result = []*schema.Visit{}
 	}
 
 	sort.Slice(result, func(i, j int) bool {

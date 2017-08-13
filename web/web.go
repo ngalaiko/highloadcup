@@ -117,7 +117,6 @@ func responseJson(w http.ResponseWriter, val interface{}) {
 func parseId(c web.C) (uint32, error) {
 	id, err := strconv.ParseInt(c.URLParams["id"], 10, 32)
 	if err != nil {
-		fmt.Println(c.URLParams["id"],err)
 		return 0, fmt.Errorf("erorr parsing id: %s", err)
 	}
 

@@ -17,7 +17,9 @@ type VisitView struct {
 
 func (v *Views) FillVisitsViews(visits []*schema.Visit) (*VisitsView, error) {
 
-	result := &VisitsView{}
+	result := &VisitsView{
+		Visits: []*VisitView{},
+	}
 
 	for _, visit := range visits {
 
