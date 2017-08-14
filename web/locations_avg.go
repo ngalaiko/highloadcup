@@ -10,8 +10,8 @@ import (
 )
 
 // GetLocationsAvgHandler is a handler for /locations/:id/avg
-func (wb *Web) GetLocationsAvgHandler(ctx *fasthttp.RequestCtx) {
-	id, err := parseId(ctx)
+func (wb *Web) GetLocationsAvgHandler(ctx *fasthttp.RequestCtx, idStr string) {
+	id, err := parseId(idStr)
 	if err != nil {
 		responseErr(ctx, err)
 		return

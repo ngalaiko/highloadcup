@@ -11,8 +11,8 @@ import (
 )
 
 // NewEntityHandler is a handler for /:entity/new
-func (wb *Web) NewEntityHandler(ctx *fasthttp.RequestCtx) {
-	entity, err := parseEntity(ctx)
+func (wb *Web) NewEntityHandler(ctx *fasthttp.RequestCtx, entityStr string) {
+	entity, err := parseEntity(entityStr)
 	if err != nil {
 		responseErr(ctx, err)
 		return

@@ -4,15 +4,14 @@ import (
 	"github.com/ngalayko/highloadcup/schema"
 )
 
-
 type VisitsView struct {
 	Visits []*VisitView `json:"visits"`
 }
 
 type VisitView struct {
-	Mark uint8 `json:"mark"`
-	VisitedAt int64 `json:"visited_at"`
-	Place string `json:"place"`
+	Mark      uint8  `json:"mark"`
+	VisitedAt int64  `json:"visited_at"`
+	Place     string `json:"place"`
 }
 
 func (v *Views) FillVisitsViews(visits []*schema.Visit) (*VisitsView, error) {
@@ -29,12 +28,11 @@ func (v *Views) FillVisitsViews(visits []*schema.Visit) (*VisitsView, error) {
 		}
 
 		result.Visits = append(result.Visits, &VisitView{
-			Mark: visit.Mark,
+			Mark:      visit.Mark,
 			VisitedAt: visit.VisitedAt,
-			Place: location.Place,
+			Place:     location.Place,
 		})
 	}
 
 	return result, nil
 }
-

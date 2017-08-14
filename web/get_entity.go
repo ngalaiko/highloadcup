@@ -2,20 +2,18 @@ package web
 
 import (
 	"github.com/valyala/fasthttp"
-	"fmt"
 )
 
 // GetEntityHandler is a handler for /:entity/:id
-func (wb *Web) GetEntityHandler(ctx *fasthttp.RequestCtx) {
-	fmt.Println(3)
+func (wb *Web) GetEntityHandler(ctx *fasthttp.RequestCtx, idStr string, entityStr string) {
 
-	entity, err := parseEntity(ctx)
+	entity, err := parseEntity(entityStr)
 	if err != nil {
 		responseErr(ctx, err)
 		return
 	}
 
-	id, err := parseId(ctx)
+	id, err := parseId(idStr)
 	if err != nil {
 		ctx.NotFound()
 		return

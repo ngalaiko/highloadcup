@@ -10,14 +10,14 @@ import (
 )
 
 // GetEntityHandler is a handler for /:entity/:id
-func (wb *Web) UpdateEntityHandler(ctx *fasthttp.RequestCtx) {
-	entity, err := parseEntity(ctx)
+func (wb *Web) UpdateEntityHandler(ctx *fasthttp.RequestCtx, idStr string, entityStr string) {
+	entity, err := parseEntity(idStr)
 	if err != nil {
 		responseErr(ctx, err)
 		return
 	}
 
-	id, err := parseId(ctx)
+	id, err := parseId(entityStr)
 	if err != nil {
 		responseErr(ctx, err)
 		return

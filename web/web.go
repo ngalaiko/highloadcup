@@ -3,9 +3,9 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
-	"fmt"
 	"regexp"
 
 	"github.com/valyala/fasthttp"
@@ -14,6 +14,8 @@ import (
 	"github.com/ngalayko/highloadcup/database"
 	"github.com/ngalayko/highloadcup/schema"
 	"github.com/ngalayko/highloadcup/views"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -21,18 +23,18 @@ const (
 )
 
 var (
-	getEntityRegex = regexp.MustCompile(`^/(?P<entity>\w+)/(?P<id>\d+)$`)
-	getVisitsRegex = regexp.MustCompile(`^/users/(?P<id>\d+)/visits$`)
+	getEntityRegex    = regexp.MustCompile(`^/(?P<entity>\w+)/(?P<id>\d+)$`)
+	getVisitsRegex    = regexp.MustCompile(`^/users/(?P<id>\d+)/visits$`)
 	locationsAvgRegex = regexp.MustCompile(`^/locations/(?P<id>\d+)/avg$`)
-	newEntityRegex = regexp.MustCompile(`^/(?P<entity>\w+)/new$`)
+	newEntityRegex    = regexp.MustCompile(`^/(?P<entity>\w+)/new$`)
 )
 
 type ctxKey string
 
 // Web is a wb service
 type Web struct {
-	db *database.DB
-	views *views.Views
+	db     *database.DB
+	views  *views.Views
 	config *config.Config
 }
 
@@ -62,8 +64,8 @@ func FromContext(ctx context.Context) *Web {
 func NewWeb(ctx context.Context) *Web {
 
 	w := &Web{
-		db: database.FromContext(ctx),
-		views: views.FromContext(ctx),
+		db:     database.FromContext(ctx),
+		views:  views.FromContext(ctx),
 		config: config.FromContext(ctx),
 	}
 
@@ -71,28 +73,36 @@ func NewWeb(ctx context.Context) *Web {
 }
 
 func (wb *Web) HandleFastHttp(ctx *fasthttp.RequestCtx) {
-	log.Printf("method: %s path: %s query: %v body: %v",  ctx.Method(), ctx.Path(), ctx.QueryArgs(), ctx.Request.Body())
+	log.Printf("method: %s path: %s query: %v body: %v", ctx.Method(), ctx.Path(), ctx.QueryArgs(), ctx.Request.Body())
 
+	parts := strings.Split(string(ctx.Path()), "/")
+
+	fmt.Println(parts[1], parts[2])
 	switch {
 	case locationsAvgRegex.Match(ctx.Path()):
+
 		if !ctx.IsGet() {
 			ctx.NotFound()
 		}
 
-		wb.GetLocationsAvgHandler(ctx)
+		wb.GetLocationsAvgHandler(ctx, parts[2])
+
 	case getVisitsRegex.Match(ctx.Path()):
+
 		if !ctx.IsGet() {
 			ctx.NotFound()
 		}
 
-		wb.GetVisitsHandler(ctx)
+		wb.GetVisitsHandler(ctx, parts[2])
+
 	case getEntityRegex.Match(ctx.Path()):
+
 		switch {
 		case ctx.IsGet():
-			wb.GetEntityHandler(ctx)
+			wb.GetEntityHandler(ctx, parts[2], parts[1])
 
 		case ctx.IsPost():
-			wb.NewEntityHandler(ctx)
+			wb.NewEntityHandler(ctx, parts[1])
 
 		default:
 			ctx.NotFound()
@@ -103,7 +113,7 @@ func (wb *Web) HandleFastHttp(ctx *fasthttp.RequestCtx) {
 			ctx.NotFound()
 		}
 
-		wb.UpdateEntityHandler(ctx)
+		wb.UpdateEntityHandler(ctx, parts[2], parts[1])
 
 	default:
 		ctx.NotFound()
@@ -142,8 +152,8 @@ func responseJson(ctx *fasthttp.RequestCtx, val interface{}) {
 	ctx.Write(data)
 }
 
-func parseId(ctx *fasthttp.RequestCtx) (uint32, error) {
-	id, err := ctx.QueryArgs().GetUint("id")
+func parseId(str string ) (uint32, error) {
+	id, err := strconv.ParseInt(str, 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing id: %s", err)
 	}
@@ -151,8 +161,8 @@ func parseId(ctx *fasthttp.RequestCtx) (uint32, error) {
 	return uint32(id), nil
 }
 
-func parseEntity(ctx *fasthttp.RequestCtx) (entity schema.Entity, err error) {
-	if err := entity.UnmarshalText(ctx.QueryArgs().Peek("entity")); err != nil {
+func parseEntity(str string) (entity schema.Entity, err error) {
+	if err := entity.UnmarshalText([]byte(str)); err != nil {
 		return schema.EntityUndefined, fmt.Errorf("erorr parsing entity: %s", err)
 	}
 
