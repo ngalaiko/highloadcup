@@ -2,50 +2,41 @@ package web
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
-	"net/http"
 
-	"github.com/zenazn/goji/web"
+	"github.com/valyala/fasthttp"
 
 	"github.com/ngalayko/highloadcup/schema"
 )
 
 // GetEntityHandler is a handler for /:entity/:id
-func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Request) {
-	entity, err := parseEntity(c)
+func (wb *Web) UpdateEntityHandler(ctx *fasthttp.RequestCtx) {
+	entity, err := parseEntity(ctx)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	id, err := parseId(c)
+	id, err := parseId(ctx)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
-
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		responseErr(w, err)
-		return
-	}
-	defer r.Body.Close()
 
 	val := schema.GetIEntity(entity)
-	if err := json.Unmarshal(data, val); err != nil {
-		responseErr(w, err)
+	if err := json.Unmarshal(ctx.PostBody(), val); err != nil {
+		responseErr(ctx, err)
 		return
 	}
 
 	if err := val.Validate(); err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
 	oldValue, err := wb.db.Get(entity, id)
 	if err != nil {
-		http.NotFound(w, r)
+		ctx.NotFound()
 		return
 	}
 
@@ -55,7 +46,7 @@ func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := wb.db.CreateOrUpdate(val); err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
@@ -63,7 +54,7 @@ func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Reque
 		go wb.onVisitUpdated(oldVisit, newVisit)
 	}
 
-	responseJson(w, struct{}{})
+	responseJson(ctx, struct{}{})
 }
 
 func (wb *Web) onVisitUpdated(oldVisit *schema.Visit, newVisit *schema.Visit) {

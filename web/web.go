@@ -5,15 +5,13 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
-
-	"github.com/zenazn/goji/web"
 
 	"github.com/ngalayko/highloadcup/config"
 	"github.com/ngalayko/highloadcup/database"
 	"github.com/ngalayko/highloadcup/schema"
 	"github.com/ngalayko/highloadcup/views"
 	"fmt"
+	"github.com/valyala/fasthttp"
 )
 
 const (
@@ -26,8 +24,7 @@ type ctxKey string
 type Web struct {
 	db *database.DB
 	views *views.Views
-
-	server *http.Server
+	config *config.Config
 }
 
 // NewContext saves wb in given context
@@ -58,64 +55,80 @@ func NewWeb(ctx context.Context) *Web {
 	w := &Web{
 		db: database.FromContext(ctx),
 		views: views.FromContext(ctx),
-
-		server: &http.Server{
-			Addr: config.FromContext(ctx).ListenUrl,
-		},
+		config: config.FromContext(ctx),
 	}
-
-	w.server.Handler = w.initMux()
 
 	return w
 }
 
-func (wb *Web) initMux() http.Handler {
-	mux := web.New()
+func (wb *Web) HandleFastHttp(ctx *fasthttp.RequestCtx) {
+	log.Printf("%s %s",  ctx.Method(), ctx.Path(), ctx.QueryArgs())
 
-	mux.Get("/locations/:id/avg", wb.GetLocationsAvgHandler)
-	mux.Get("/users/:id/visits", wb.GetVisitsHandler)
-	mux.Get("/:entity/:id", wb.GetEntityHandler)
+	switch string(ctx.Path()) {
+	case "/locations/:id/avg":
+		if !ctx.IsGet() {
+			ctx.NotFound()
+		}
 
-	mux.Post("/:entity/new", wb.NewEntityHandler)
-	mux.Post("/:entity/:id", wb.UpdateEntityHandler)
+		wb.GetLocationsAvgHandler(ctx)
+	case "/users/:id/visits":
 
-	return mux
+		if !ctx.IsGet() {
+			ctx.NotFound()
+		}
+
+		wb.GetVisitsHandler(ctx)
+	case "/:entity/:id":
+		switch {
+		case ctx.IsGet():
+			wb.GetEntityHandler(ctx)
+		case ctx.IsPost():
+			wb.NewEntityHandler(ctx)
+		}
+
+	case "/:entity/new":
+		if !ctx.IsPost() {
+			ctx.NotFound()
+		}
+
+		wb.UpdateEntityHandler(ctx)
+	}
 }
 
 func (wb *Web) ServeHTTP() error {
 
-	log.Println("listening on:", wb.server.Addr)
-	if err := wb.server.ListenAndServe(); err != nil {
-		return err
+	log.Println("listening on:", wb.config.ListenUrl)
+	if err := fasthttp.ListenAndServe(wb.config.ListenUrl, wb.HandleFastHttp); err != nil {
+		log.Printf("listenAndServe err: %s", err)
 	}
 
 	return nil
 }
 
-func responseErr(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusBadRequest)
+func responseErr(ctx *fasthttp.RequestCtx, err error) {
+	ctx.SetStatusCode(http.StatusBadRequest)
 
-	responseJson(w, struct {
+	responseJson(ctx, struct {
 		Error string `json:"error"`
 	}{
 		Error: err.Error(),
 	})
 }
 
-func responseJson(w http.ResponseWriter, val interface{}) {
-	w.Header().Set("Content-type", "application/json")
+func responseJson(ctx *fasthttp.RequestCtx, val interface{}) {
+	ctx.Response.Header.Set("Content-type", "application/json")
 
 	data, err := json.Marshal(val)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	w.Write(data)
+	ctx.Write(data)
 }
 
-func parseId(c web.C) (uint32, error) {
-	id, err := strconv.ParseInt(c.URLParams["id"], 10, 32)
+func parseId(ctx *fasthttp.RequestCtx) (uint32, error) {
+	id, err := ctx.QueryArgs().GetUint("id")
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing id: %s", err)
 	}
@@ -123,85 +136,89 @@ func parseId(c web.C) (uint32, error) {
 	return uint32(id), nil
 }
 
-func parseEntity(c web.C) (entity schema.Entity, err error) {
-	if err := entity.UnmarshalText([]byte(c.URLParams["entity"])); err != nil {
+func parseEntity(ctx *fasthttp.RequestCtx) (entity schema.Entity, err error) {
+	if err := entity.UnmarshalText(ctx.QueryArgs().Peek("entity")); err != nil {
 		return schema.EntityUndefined, fmt.Errorf("erorr parsing entity: %s", err)
 	}
 
 	return entity, nil
 }
 
-func parseToDistance(r *http.Request) (uint32, error) {
-	if r.URL.Query().Get("toDistance") == "" {
+func parseToDistance(ctx *fasthttp.RequestCtx) (uint32, error) {
+	toDistance, err := ctx.QueryArgs().GetUint("toDistance")
+	switch err {
+	case nil:
+		return uint32(toDistance), nil
+	case fasthttp.ErrNoArgValue:
 		return 0, nil
+	default:
+		return 0, err
 	}
-
-	distance, err := strconv.ParseInt(r.URL.Query().Get("toDistance"), 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("erorr parsing toDistance: %s", err)
-	}
-	return uint32(distance), nil
 }
 
-func parseCountry(r *http.Request) string {
-	return r.URL.Query().Get("country")
+func parseCountry(ctx *fasthttp.RequestCtx) string {
+	return string(ctx.QueryArgs().Peek("country"))
 }
 
-func parseToDate(r *http.Request) (int64, error) {
-	if r.URL.Query().Get("toDate") == "" {
+func parseToDate(ctx *fasthttp.RequestCtx) (int64, error) {
+	toDate, err := ctx.QueryArgs().GetUint("toDate")
+	switch err {
+	case nil:
+		return int64(toDate), nil
+	case fasthttp.ErrNoArgValue:
 		return 0, nil
+	default:
+		return 0, err
 	}
-
-	date, err := strconv.ParseInt(r.URL.Query().Get("toDate"), 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("erorr parsing toDate: %s", err)
-	}
-	return date, nil
 }
 
-func parseFromDate(r *http.Request) (int64, error) {
-	if r.URL.Query().Get("fromDate") == "" {
+func parseFromDate(ctx *fasthttp.RequestCtx) (int64, error) {
+	fromDate, err := ctx.QueryArgs().GetUint("fromDate")
+	switch err {
+	case nil:
+		return int64(fromDate), nil
+	case fasthttp.ErrNoArgValue:
 		return 0, nil
+	default:
+		return 0, err
 	}
-
-	date, err := strconv.ParseInt(r.URL.Query().Get("fromDate"), 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("erorr parsing fromDateDate: %s", err)
-	}
-	return date, nil
 }
 
-func parseFromAge(r *http.Request) (int, error) {
-	if r.URL.Query().Get("fromAge") == "" {
+func parseFromAge(ctx *fasthttp.RequestCtx) (int, error) {
+	fromAge, err := ctx.QueryArgs().GetUint("fromAge")
+	switch err {
+	case nil:
+		return fromAge, nil
+	case fasthttp.ErrNoArgValue:
 		return 0, nil
+	default:
+		return 0, err
 	}
-
-	age, err := strconv.ParseInt(r.URL.Query().Get("fromAge"), 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("erorr parsing fromAge: %s", err)
-	}
-	return int(age), nil
 }
 
-func parseToAge(r *http.Request) (int, error) {
-	if r.URL.Query().Get("toAge") == "" {
+func parseToAge(ctx *fasthttp.RequestCtx) (int, error) {
+	toAge, err := ctx.QueryArgs().GetUint("toAge")
+	switch err {
+	case nil:
+		return toAge, nil
+	case fasthttp.ErrNoArgValue:
 		return 0, nil
+	default:
+		return 0, err
 	}
-
-	age, err := strconv.ParseInt(r.URL.Query().Get("toAge"), 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("erorr parsing toAge: %s", err)
-	}
-	return int(age), err
 }
 
-func parseGender(r *http.Request) (gender schema.Gender, err error) {
-	if r.URL.Query().Get("gender") == "" {
+func parseGender(ctx *fasthttp.RequestCtx) (schema.Gender, error) {
+	genderBytes := ctx.QueryArgs().Peek("gender")
+	switch len(genderBytes) {
+	case 0:
 		return schema.GenderUndefined, nil
-	}
+	default:
+		var gender schema.Gender
+		if err := gender.UnmarshalText(genderBytes); err != nil {
+			return schema.GenderUndefined, fmt.Errorf("erorr parsing gender: %s", err)
+		}
 
-	if err := gender.UnmarshalText([]byte(r.URL.Query().Get("gender"))); err != nil {
-		return schema.GenderUndefined, fmt.Errorf("erorr parsing gender: %s", err)
+		return gender, nil
 	}
-	return gender, err
 }

@@ -1,62 +1,61 @@
 package web
 
 import (
-	"net/http"
 	"time"
 
-	"github.com/zenazn/goji/web"
+	"github.com/valyala/fasthttp"
 
 	"github.com/ngalayko/highloadcup/helper"
 	"github.com/ngalayko/highloadcup/schema"
 )
 
 // GetLocationsAvgHandler is a handler for /locations/:id/avg
-func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Request) {
-	id, err := parseId(c)
+func (wb *Web) GetLocationsAvgHandler(ctx *fasthttp.RequestCtx) {
+	id, err := parseId(ctx)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	fromDate, err := parseFromDate(r)
+	fromDate, err := parseFromDate(ctx)
 	if err != nil && fromDate == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	toDate, err := parseToDate(r)
+	toDate, err := parseToDate(ctx)
 	if err != nil && toDate == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	fromAge, err := parseFromAge(r)
+	fromAge, err := parseFromAge(ctx)
 	if err != nil && fromAge == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	toAge, err := parseToAge(r)
+	toAge, err := parseToAge(ctx)
 	if err != nil && toAge == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	gender, err := parseGender(r)
+	gender, err := parseGender(ctx)
 	if err != nil && gender == schema.GenderUndefined {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
 	location, err := wb.db.GetLocation(id)
 	if err != nil {
-		http.NotFound(w, r)
+		ctx.NotFound()
 		return
 	}
 
 	visits, err := wb.db.GetVisits(location.VisitIDs)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 	var userIds []uint32
@@ -68,7 +67,7 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 	for _, visit := range visits {
 		user, err := wb.db.GetUser(visit.UserID)
 		if err != nil {
-			responseErr(w, err)
+			responseErr(ctx, err)
 			return
 		}
 
@@ -96,7 +95,7 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 	}
 
 	if len(marks) > 0 {
-		responseJson(w, struct {
+		responseJson(ctx, struct {
 			Avg float64 `json:"avg"`
 		}{
 			Avg: helper.Avg(marks...),
@@ -104,6 +103,6 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"avg": 0.0}`))
+	ctx.Response.Header.Set("Content-Type", "application/json")
+	ctx.Write([]byte(`{"avg": 0.0}`))
 }

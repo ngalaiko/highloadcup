@@ -1,30 +1,28 @@
 package web
 
 import (
-	"net/http"
-
-	"github.com/zenazn/goji/web"
+	"github.com/valyala/fasthttp"
 )
 
 // GetEntityHandler is a handler for /:entity/:id
-func (wb *Web) GetEntityHandler(c web.C, w http.ResponseWriter, r *http.Request) {
-	entity, err := parseEntity(c)
+func (wb *Web) GetEntityHandler(ctx *fasthttp.RequestCtx) {
+	entity, err := parseEntity(ctx)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	id, err := parseId(c)
+	id, err := parseId(ctx)
 	if err != nil {
-		http.NotFound(w, r)
+		ctx.NotFound()
 		return
 	}
 
 	result, err := wb.db.Get(entity, id)
 	if err != nil {
-		http.NotFound(w, r)
+		ctx.NotFound()
 		return
 	}
 
-	responseJson(w, result)
+	responseJson(ctx, result)
 }

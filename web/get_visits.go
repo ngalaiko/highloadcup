@@ -1,48 +1,47 @@
 package web
 
 import (
-	"net/http"
 	"sort"
 
-	"github.com/zenazn/goji/web"
+	"github.com/valyala/fasthttp"
 
 	"github.com/ngalayko/highloadcup/schema"
 )
 
 // GetVisitsHandler is handler for /users/:id/visits
-func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request) {
-	id, err := parseId(c)
+func (wb *Web) GetVisitsHandler(ctx *fasthttp.RequestCtx) {
+	id, err := parseId(ctx)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	country := parseCountry(r)
-	fromDate, err := parseFromDate(r)
+	country := parseCountry(ctx)
+	fromDate, err := parseFromDate(ctx)
 	if err != nil && fromDate == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
-	toDate, err := parseToDate(r)
+	toDate, err := parseToDate(ctx)
 	if err != nil && toDate == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
-	toDistance, err := parseToDistance(r)
+	toDistance, err := parseToDistance(ctx)
 	if err != nil && toDistance == 0 {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
 	user, err := wb.db.GetUser(id)
 	if err != nil {
-		http.NotFound(w, r)
+		ctx.NotFound()
 		return
 	}
 
 	visits, err := wb.db.GetVisits(user.VisitIDs)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
@@ -50,7 +49,7 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 	for _, visit := range visits {
 		location, err := wb.db.GetLocation(visit.LocationID)
 		if err != nil {
-			responseErr(w, err)
+			responseErr(ctx, err)
 			return
 		}
 
@@ -83,9 +82,9 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 
 	views, err := wb.views.FillVisitsViews(result)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
-	responseJson(w, views)
+	responseJson(ctx, views)
 }

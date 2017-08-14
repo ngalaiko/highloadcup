@@ -2,10 +2,28 @@
 
 
 [[projects]]
-  name = "github.com/zenazn/goji"
-  packages = ["web"]
-  revision = "64eb34159fe53473206c2b3e70fe396a639452f2"
-  version = "v1.0"
+  name = "github.com/klauspost/compress"
+  packages = ["flate","gzip","zlib"]
+  revision = "6c8db69c4b49dd4df1fff66996cf556176d0b9bf"
+  version = "v1.2.1"
+
+[[projects]]
+  name = "github.com/klauspost/cpuid"
+  packages = ["."]
+  revision = "ae7887de9fa5d2db4eaa8174a7eff2c1ac00f2da"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/klauspost/crc32"
+  packages = ["."]
+  revision = "cb6bfca970f6908083f26f39a79009d608efd5cd"
+  version = "v1.1"
+
+[[projects]]
+  name = "github.com/valyala/fasthttp"
+  packages = [".","fasthttputil"]
+  revision = "d42167fd04f636e20b005e9934159e95454233c7"
+  version = "v20160617"
 
 [[projects]]
   branch = "master"
@@ -28,6 +46,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cf1abf83d4751b8bc285996cc1e5f0bb1a790a00f66cf869094771e6ea636462"
+  inputs-digest = "b75effbb0bb4191d0fa33d6478d53cb3d452932210f65bd12f91d9d1ecd32e5e"
   solver-name = "gps-cdcl"
   solver-version = 1

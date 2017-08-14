@@ -3,48 +3,39 @@ package web
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"log"
 
-	"github.com/zenazn/goji/web"
+	"github.com/valyala/fasthttp"
 
 	"github.com/ngalayko/highloadcup/schema"
 )
 
 // NewEntityHandler is a handler for /:entity/new
-func (wb *Web) NewEntityHandler(c web.C, w http.ResponseWriter, r *http.Request) {
-	entity, err := parseEntity(c)
+func (wb *Web) NewEntityHandler(ctx *fasthttp.RequestCtx) {
+	entity, err := parseEntity(ctx)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
-
-	data, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		responseErr(w, err)
-		return
-	}
-	defer r.Body.Close()
 
 	val := schema.GetIEntity(entity)
-	if err := json.Unmarshal(data, val); err != nil {
-		responseErr(w, err)
+	if err := json.Unmarshal(ctx.PostBody(), val); err != nil {
+		responseErr(ctx, err)
 		return
 	}
 
 	if err := val.Validate(); err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
 	if _, err := wb.db.Get(entity, val.IntID()); err == nil {
-		responseErr(w, fmt.Errorf("entity already exists"))
+		responseErr(ctx, fmt.Errorf("entity already exists"))
 		return
 	}
 
 	if err := wb.db.CreateOrUpdate(val); err != nil {
-		responseErr(w, err)
+		responseErr(ctx, err)
 		return
 	}
 
@@ -52,7 +43,7 @@ func (wb *Web) NewEntityHandler(c web.C, w http.ResponseWriter, r *http.Request)
 		go wb.onVisitInserted(newVisit)
 	}
 
-	responseJson(w, struct{}{})
+	responseJson(ctx, struct{}{})
 }
 
 func (wb *Web) onVisitInserted(visit *schema.Visit) {
