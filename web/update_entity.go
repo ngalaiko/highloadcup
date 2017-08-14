@@ -15,31 +15,31 @@ import (
 func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	entity, err := parseEntity(c)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	id, err := parseId(c)
 	if err != nil {
-		responseErr(w, err)
+		http.NotFound(w, r)
 		return
 	}
 
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 	defer r.Body.Close()
 
 	val := schema.GetIEntity(entity)
 	if err := json.Unmarshal(data, val); err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	if err := val.Validate(); err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (wb *Web) UpdateEntityHandler(c web.C, w http.ResponseWriter, r *http.Reque
 	}
 
 	if err := wb.db.CreateOrUpdate(val); err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 

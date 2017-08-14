@@ -10,7 +10,7 @@ import (
 func (wb *Web) GetEntityHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	entity, err := parseEntity(c)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 

@@ -13,24 +13,24 @@ import (
 func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	id, err := parseId(c)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	country := parseCountry(r)
 	fromDate, err := parseFromDate(r)
 	if err != nil && fromDate == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 	toDate, err := parseToDate(r)
 	if err != nil && toDate == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 	toDistance, err := parseToDistance(r)
 	if err != nil && toDistance == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
@@ -42,7 +42,7 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 
 	visits, err := wb.db.GetVisits(user.VisitIDs)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
@@ -50,7 +50,7 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 	for _, visit := range visits {
 		location, err := wb.db.GetLocation(visit.LocationID)
 		if err != nil {
-			responseErr(w, err)
+			responseErr(r, w, err)
 			return
 		}
 
@@ -83,7 +83,7 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 
 	views, err := wb.views.FillVisitsViews(result)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 

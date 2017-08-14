@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"fmt"
 
 	"github.com/zenazn/goji/web"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/ngalayko/highloadcup/database"
 	"github.com/ngalayko/highloadcup/schema"
 	"github.com/ngalayko/highloadcup/views"
-	"fmt"
 )
 
 const (
@@ -92,22 +92,22 @@ func (wb *Web) ServeHTTP() error {
 	return nil
 }
 
-func responseErr(w http.ResponseWriter, err error) {
+func responseErr(r *http.Request, w http.ResponseWriter, err error) {
 	w.WriteHeader(http.StatusBadRequest)
 
 	responseJson(w, struct {
 		Error string `json:"error"`
 	}{
-		Error: err.Error(),
+		Error: fmt.Sprintf("%s: %s", r.RequestURI, err),
 	})
 }
 
-func responseJson(w http.ResponseWriter, val interface{}) {
+func responseJson( w http.ResponseWriter, val interface{}) {
 	w.Header().Set("Content-type", "application/json")
 
 	data, err := json.Marshal(val)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(nil, w, err)
 		return
 	}
 

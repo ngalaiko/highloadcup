@@ -14,37 +14,37 @@ import (
 func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Request) {
 	id, err := parseId(c)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	fromDate, err := parseFromDate(r)
 	if err != nil && fromDate == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	toDate, err := parseToDate(r)
 	if err != nil && toDate == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	fromAge, err := parseFromAge(r)
 	if err != nil && fromAge == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	toAge, err := parseToAge(r)
 	if err != nil && toAge == 0 {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
 	gender, err := parseGender(r)
 	if err != nil && gender == schema.GenderUndefined {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 
@@ -56,7 +56,7 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 
 	visits, err := wb.db.GetVisits(location.VisitIDs)
 	if err != nil {
-		responseErr(w, err)
+		responseErr(r, w, err)
 		return
 	}
 	var userIds []uint32
@@ -68,7 +68,7 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 	for _, visit := range visits {
 		user, err := wb.db.GetUser(visit.UserID)
 		if err != nil {
-			responseErr(w, err)
+			responseErr(r, w, err)
 			return
 		}
 
