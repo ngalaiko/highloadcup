@@ -31,7 +31,7 @@ func (wb *Web) GetLocationsAvgHandler(c web.C, w http.ResponseWriter, r *http.Re
 	}
 
 	fromAge, err := parseFromAge(r)
-	if err != nil && fromDate != 0 {
+	if err != nil && fromAge != 0 {
 		responseErr(w, err)
 		return
 	}
