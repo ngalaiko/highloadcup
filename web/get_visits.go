@@ -19,17 +19,17 @@ func (wb *Web) GetVisitsHandler(c web.C, w http.ResponseWriter, r *http.Request)
 
 	country := parseCountry(r)
 	fromDate, err := parseFromDate(r)
-	if err != nil && fromDate != 0 {
+	if err != nil && fromDate == 0 {
 		responseErr(w, err)
 		return
 	}
 	toDate, err := parseToDate(r)
-	if err != nil && toDate != 0 {
+	if err != nil && toDate == 0 {
 		responseErr(w, err)
 		return
 	}
 	toDistance, err := parseToDistance(r)
-	if err != nil && toDistance != 0 {
+	if err != nil && toDistance == 0 {
 		responseErr(w, err)
 		return
 	}

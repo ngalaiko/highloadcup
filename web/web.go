@@ -132,6 +132,10 @@ func parseEntity(c web.C) (entity schema.Entity, err error) {
 }
 
 func parseToDistance(r *http.Request) (uint32, error) {
+	if r.URL.Query().Get("toDistance") == "" {
+		return 0, nil
+	}
+
 	distance, err := strconv.ParseInt(r.URL.Query().Get("toDistance"), 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing toDistance: %s", err)
@@ -144,6 +148,10 @@ func parseCountry(r *http.Request) string {
 }
 
 func parseToDate(r *http.Request) (int64, error) {
+	if r.URL.Query().Get("toDate") == "" {
+		return 0, nil
+	}
+
 	date, err := strconv.ParseInt(r.URL.Query().Get("toDate"), 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing toDate: %s", err)
@@ -152,6 +160,10 @@ func parseToDate(r *http.Request) (int64, error) {
 }
 
 func parseFromDate(r *http.Request) (int64, error) {
+	if r.URL.Query().Get("fromDate") == "" {
+		return 0, nil
+	}
+
 	date, err := strconv.ParseInt(r.URL.Query().Get("fromDate"), 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing fromDateDate: %s", err)
@@ -160,6 +172,10 @@ func parseFromDate(r *http.Request) (int64, error) {
 }
 
 func parseFromAge(r *http.Request) (int, error) {
+	if r.URL.Query().Get("fromAge") == "" {
+		return 0, nil
+	}
+
 	age, err := strconv.ParseInt(r.URL.Query().Get("fromAge"), 10, 32)
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing fromAge: %s", err)
@@ -168,6 +184,10 @@ func parseFromAge(r *http.Request) (int, error) {
 }
 
 func parseToAge(r *http.Request) (int, error) {
+	if r.URL.Query().Get("toAge") == "" {
+		return 0, nil
+	}
+
 	age, err := strconv.ParseInt(r.URL.Query().Get("toAge"), 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("erorr parsing toAge: %s", err)
@@ -176,6 +196,10 @@ func parseToAge(r *http.Request) (int, error) {
 }
 
 func parseGender(r *http.Request) (gender schema.Gender, err error) {
+	if r.URL.Query().Get("gender") == "" {
+		return schema.GenderUndefined, nil
+	}
+
 	if err := gender.UnmarshalText([]byte(r.URL.Query().Get("gender"))); err != nil {
 		return schema.GenderUndefined, fmt.Errorf("erorr parsing gender: %s", err)
 	}
