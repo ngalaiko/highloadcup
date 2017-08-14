@@ -5,17 +5,26 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"fmt"
+	"regexp"
+
+	"github.com/valyala/fasthttp"
 
 	"github.com/ngalayko/highloadcup/config"
 	"github.com/ngalayko/highloadcup/database"
 	"github.com/ngalayko/highloadcup/schema"
 	"github.com/ngalayko/highloadcup/views"
-	"fmt"
-	"github.com/valyala/fasthttp"
 )
 
 const (
 	webCtxKey ctxKey = "ctx_key_for_web"
+)
+
+var (
+	getEntityRegex = regexp.MustCompile(`^/(?P<entity>\w+)/(?P<id>\d+)$`)
+	getVisitsRegex = regexp.MustCompile(`^/users/(?P<id>\d+)/visits$`)
+	locationsAvgRegex = regexp.MustCompile(`^/locations/(?P<id>\d+)/avg$`)
+	newEntityRegex = regexp.MustCompile(`^/(?P<entity>\w+)/new$`)
 )
 
 type ctxKey string
@@ -62,36 +71,42 @@ func NewWeb(ctx context.Context) *Web {
 }
 
 func (wb *Web) HandleFastHttp(ctx *fasthttp.RequestCtx) {
-	log.Printf("%s %s",  ctx.Method(), ctx.Path(), ctx.QueryArgs())
+	log.Printf("method: %s path: %s query: %v body: %v",  ctx.Method(), ctx.Path(), ctx.QueryArgs(), ctx.Request.Body())
 
-	switch string(ctx.Path()) {
-	case "/locations/:id/avg":
+	switch {
+	case locationsAvgRegex.Match(ctx.Path()):
 		if !ctx.IsGet() {
 			ctx.NotFound()
 		}
 
 		wb.GetLocationsAvgHandler(ctx)
-	case "/users/:id/visits":
-
+	case getVisitsRegex.Match(ctx.Path()):
 		if !ctx.IsGet() {
 			ctx.NotFound()
 		}
 
 		wb.GetVisitsHandler(ctx)
-	case "/:entity/:id":
+	case getEntityRegex.Match(ctx.Path()):
 		switch {
 		case ctx.IsGet():
 			wb.GetEntityHandler(ctx)
+
 		case ctx.IsPost():
 			wb.NewEntityHandler(ctx)
+
+		default:
+			ctx.NotFound()
 		}
 
-	case "/:entity/new":
+	case newEntityRegex.Match(ctx.Path()):
 		if !ctx.IsPost() {
 			ctx.NotFound()
 		}
 
 		wb.UpdateEntityHandler(ctx)
+
+	default:
+		ctx.NotFound()
 	}
 }
 
