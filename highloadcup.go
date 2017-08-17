@@ -6,8 +6,8 @@ import (
 
 	"github.com/ngalayko/highloadcup/config"
 	"github.com/ngalayko/highloadcup/database"
-	"github.com/ngalayko/highloadcup/web"
 	"github.com/ngalayko/highloadcup/views"
+	"github.com/ngalayko/highloadcup/web"
 )
 
 type Application struct {

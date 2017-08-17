@@ -3,10 +3,10 @@ package web
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
-	"fmt"
 
 	"github.com/zenazn/goji/web"
 
@@ -24,7 +24,7 @@ type ctxKey string
 
 // Web is a wb service
 type Web struct {
-	db *database.DB
+	db    *database.DB
 	views *views.Views
 
 	server *http.Server
@@ -56,7 +56,7 @@ func FromContext(ctx context.Context) *Web {
 func NewWeb(ctx context.Context) *Web {
 
 	w := &Web{
-		db: database.FromContext(ctx),
+		db:    database.FromContext(ctx),
 		views: views.FromContext(ctx),
 
 		server: &http.Server{
@@ -102,7 +102,7 @@ func responseErr(r *http.Request, w http.ResponseWriter, err error) {
 	})
 }
 
-func responseJson( w http.ResponseWriter, val interface{}) {
+func responseJson(w http.ResponseWriter, val interface{}) {
 	w.Header().Set("Content-type", "application/json")
 
 	data, err := json.Marshal(val)

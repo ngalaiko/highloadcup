@@ -2,10 +2,10 @@ package config
 
 import (
 	"context"
+	"flag"
 	"io/ioutil"
 	"log"
 	"os"
-	"flag"
 
 	"gopkg.in/yaml.v2"
 )
